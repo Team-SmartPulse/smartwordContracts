@@ -88,14 +88,14 @@ contract NFTMarket is ReentrancyGuard {
     ) public payable nonReentrant {
     uint price = idToMarketItem[itemId].price;
     uint tokenId = idToMarketItem[itemId].tokenId;
-    require(msg.value == price, "Please submit the asking price in order to complete the purchase");
+    require(msg.value >= price, "Please submit the asking price in order to complete the purchase");
 
     idToMarketItem[itemId].seller.transfer(msg.value);
-    IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
+    IERC721(nftContract).safeTransferFrom(address(this), msg.sender, tokenId);
     idToMarketItem[itemId].owner = payable(msg.sender);
     idToMarketItem[itemId].sold = true;
     _itemsSold.increment();
-    payable(owner).transfer(listingPrice);
+    //payable(owner).transfer(listingPrice);
   }
 
   /* Returns all unsold market items */
@@ -163,4 +163,8 @@ contract NFTMarket is ReentrancyGuard {
     }
     return items;
   }
+
+  receive() external payable {
+    // Handle the received Ether
+}
 }
