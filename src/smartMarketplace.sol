@@ -2,6 +2,7 @@
 pragma solidity ^0.8.4;
 
 import "../lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import "../lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
 import "../lib/openzeppelin-contracts/contracts/utils/Counters.sol";
 import "../lib/openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 //import "hardhat/console.sol";
@@ -39,6 +40,11 @@ contract NFTMarket is ReentrancyGuard {
     uint256 price,
     bool sold
   );
+
+  modifier onlyOwner() {
+        require(msg.sender == owner, "Not a moderator");
+        _;
+    }
 
   /* Returns the listing price of the contract */
   function getListingPrice() public view returns (uint256) {
@@ -164,7 +170,13 @@ contract NFTMarket is ReentrancyGuard {
     return items;
   }
 
+  function withdrawTokens(address _tokenAddress, address payable _recipientAddress, uint _amount) external onlyOwner(){
+        require(_recipientAddress != address(0), "Invalid address");
+        require(_amount <= IERC721(_tokenAddress).balanceOf(address(this)), "Insufficient acount balance");
+        IERC721(_tokenAddress).transferFrom(address(this), _recipientAddress, _amount);
+    }
+
   receive() external payable {
-    // Handle the received Ether
+    payable(owner).transfer(listingPrice);
 }
 }
