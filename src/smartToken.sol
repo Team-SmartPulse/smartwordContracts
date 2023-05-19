@@ -13,6 +13,19 @@ contract smartPulse is ERC20 {
         uint256 indexed reward
     );
 
+    event lvlUp(
+        address indexed User,
+        uint256 indexed level,
+        uint256 indexed reward
+    );
+
+    event lvlEnded(
+        address indexed User,
+        uint256 indexed level,
+        bool indexed ended
+    );
+
+
     struct User{
         uint256 level;
         uint256 lastEarned;
@@ -21,6 +34,7 @@ contract smartPulse is ERC20 {
  
     address owner;
     mapping(address => User) lvl;
+    mapping(address => bool) lvlFinished;
     mapping(address => uint256) amountMinted;
 
     constructor() ERC20("smartCoin", "SMC"){
@@ -35,13 +49,27 @@ contract smartPulse is ERC20 {
         amountMinted[msg.sender] = amount;
     }
 
-    function increaseLevel() public {
+    function increaseLevel() public returns(bool success) {
         User storage user = lvl[msg.sender];
         user.level += 1;
         user.reward += user.level;
+        lvlFinished[msg.sender] =  false;
+        success = true;
+
+        emit lvlUp(msg.sender, user.level, user.reward);
     }
 
+    function finishLvl() public {
+        User storage user = lvl[msg.sender];
+        require(increaseLevel(), "no lvl started");
+        lvlFinished[msg.sender] = true;
+        bool ended = true;
+
+        emit lvlEnded(msg.sender, user.level, ended);
+
+    }
     function earn() public {
+        require(lvlFinished[msg.sender] == true, "Current level still on ended");
         User storage user = lvl[msg.sender];
         
         require(user.reward > 0, "No reward available for user");
